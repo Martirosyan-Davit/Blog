@@ -6,7 +6,6 @@ import {
   HttpStatus,
   Put,
   Query,
-  ValidationPipe,
 } from '@nestjs/common';
 import { ApiAcceptedResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -31,9 +30,8 @@ export class UserController {
     description: 'Get users list',
     type: PageDto,
   })
-  getUsers(
-    @Query(new ValidationPipe({ transform: true }))
-    pageOptionsDto: UsersPageOptionsDto,
+  async getUsers(
+    @Query() pageOptionsDto: UsersPageOptionsDto,
   ): Promise<PageDto<UserDto>> {
     return this.userService.getUsers(pageOptionsDto);
   }
@@ -46,7 +44,7 @@ export class UserController {
     description: 'Get users list',
     type: UserDto,
   })
-  getUser(@UUIDParam('id') userId: Uuid): Promise<UserDto> {
+  async getUser(@UUIDParam('id') userId: Uuid): Promise<UserDto> {
     return this.userService.getUser(userId);
   }
 
@@ -56,7 +54,7 @@ export class UserController {
   @ApiAcceptedResponse({
     description: 'Update user',
   })
-  updateUser(
+  async updateUser(
     @Body() updateUserDto: UpdateUserDto,
     @AuthUser() user: UserEntity,
   ): Promise<void> {
