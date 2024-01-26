@@ -44,19 +44,18 @@ export class UserService {
     return queryBuilder.getOne();
   }
 
-  async createUser(userRegisterDto: UserRegisterDto): Promise<UserEntity> {
-    const user = this.userRepository.create(userRegisterDto);
+  async createUser(userRegisterDto: UserRegisterDto): Promise<UserDto> {
+    const userEntity = this.userRepository.create(userRegisterDto);
 
-    await this.userRepository.save(user);
+    await this.userRepository.save(userEntity);
 
-    return user;
+    return userEntity.toDto();
   }
 
   async getUsers(
     pageOptionsDto: UsersPageOptionsDto,
   ): Promise<PageDto<UserDto>> {
     const queryBuilder = this.userRepository.createQueryBuilder('user');
-    console.log('===================', pageOptionsDto);
 
     const [items, pageMetaDto] = await queryBuilder.paginate(pageOptionsDto);
 

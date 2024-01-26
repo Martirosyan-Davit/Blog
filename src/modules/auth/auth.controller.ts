@@ -34,35 +34,22 @@ export class AuthController {
     type: LoginPayloadDto,
     description: 'User info with access token',
   })
-  async userLogin(
-    @Body() userLoginDto: UserLoginDto,
-  ): Promise<LoginPayloadDto> {
-    const userEntity = await this.authService.validateUser(userLoginDto);
-
-    const token = await this.authService.createAccessToken({
-      userId: userEntity.id,
-      role: userEntity.role,
-    });
-
-    return new LoginPayloadDto(userEntity.toDto(), token);
+  userLogin(@Body() userLoginDto: UserLoginDto): Promise<LoginPayloadDto> {
+    return this.authService.validateUser(userLoginDto);
   }
 
   @Post('register')
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: UserDto, description: 'Successfully Registered' })
-  async userRegister(
-    @Body() userRegisterDto: UserRegisterDto,
-  ): Promise<UserDto> {
-    const createdUser = await this.userService.createUser(userRegisterDto);
-
-    return createdUser.toDto();
+  userRegister(@Body() userRegisterDto: UserRegisterDto): Promise<UserDto> {
+    return this.userService.createUser(userRegisterDto);
   }
 
   @Get('/logout')
   @Auth([RoleType.USER])
   @HttpCode(HttpStatus.OK)
   @ApiNoContentResponse()
-  async logout(@AuthUser() user: UserEntity): Promise<IMessage> {
+  logout(@AuthUser() user: UserEntity): Promise<IMessage> {
     return this.authService.logout(user.id);
   }
 

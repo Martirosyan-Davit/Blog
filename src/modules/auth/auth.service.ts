@@ -1,15 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
 import { validateHash } from '../../common/utils';
-import { MessageType, type RoleType, TokenType } from '../../constants';
+import { MessageType } from '../../constants';
 import { UserNotFoundException } from '../../exceptions';
-import { TokenNotSavedException } from '../../exceptions/token-not-saved.exception';
 import { type IMessage } from '../../interfaces/index';
 import { JwtTokenService } from '../../shared/services/jwt-token.service';
 import { RedisService } from '../../shared/services/redis.service';
-import { type UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
-import { type TokenPayloadDto } from './dto/token-payload.dto';
+import { LoginPayloadDto } from './dto/login-payload.dto';
 import { type UserLoginDto } from './dto/user-login.dto';
 
 @Injectable()
@@ -20,46 +18,30 @@ export class AuthService {
     private redisService: RedisService,
   ) {}
 
-  async createAccessToken(data: {
-    role: RoleType;
-    userId: Uuid;
-  }): Promise<TokenPayloadDto> {
-    const tokenPayload = {
-      userId: data.userId,
-      type: TokenType.ACCESS_TOKEN,
-      role: data.role,
-    };
-
-    const tokenPayloadDto =
-      await this.jwtTokenService.createAccessToken(tokenPayload);
-
-    const result = await this.redisService.saveSessionToken(
-      data.userId,
-      tokenPayloadDto.accessToken,
-    );
-
-    if (!result) {
-      throw new TokenNotSavedException();
-    }
-
-    return tokenPayloadDto;
-  }
-
-  async validateUser(userLoginDto: UserLoginDto): Promise<UserEntity> {
-    const user = await this.userService.findOne({
+  async validateUser(userLoginDto: UserLoginDto): Promise<LoginPayloadDto> {
+    const userEntity = await this.userService.findOne({
       email: userLoginDto.email,
     });
 
+    if (!userEntity) {
+      throw new UserNotFoundException();
+    }
+
     const isPasswordValid = await validateHash(
       userLoginDto.password,
-      user?.password,
+      userEntity.password,
     );
 
     if (!isPasswordValid) {
       throw new UserNotFoundException();
     }
 
-    return user!;
+    const token = await this.jwtTokenService.createAccessToken({
+      userId: userEntity.id,
+      role: userEntity.role,
+    });
+
+    return new LoginPayloadDto(userEntity.toDto(), token);
   }
 
   async logout(id: Uuid): Promise<IMessage> {

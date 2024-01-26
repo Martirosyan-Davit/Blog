@@ -4,11 +4,16 @@ import { JwtService } from '@nestjs/jwt';
 import { AccessTokenPayloadDto } from '../../common/dto/access-token-payload.dto';
 import { TokenType } from '../../constants';
 import { InvalidTokenException } from '../../exceptions/index';
+import { TokenNotSavedException } from '../../exceptions/token-not-saved.exception';
 import { TokenPayloadDto } from '../../modules/auth/dto/token-payload.dto';
+import { RedisService } from './redis.service';
 
 @Injectable()
 export class JwtTokenService {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private redisService: RedisService,
+  ) {}
 
   private async createToken<T>(
     type: TokenType,
@@ -22,10 +27,24 @@ export class JwtTokenService {
     });
   }
 
-  createAccessToken(
+  async createAccessToken(
     accessTokenPayloadDto: AccessTokenPayloadDto,
   ): Promise<TokenPayloadDto> {
-    return this.createToken(TokenType.ACCESS_TOKEN, accessTokenPayloadDto);
+    const tokenPayloadDto = await this.createToken(
+      TokenType.ACCESS_TOKEN,
+      accessTokenPayloadDto,
+    );
+
+    const result = await this.redisService.saveSessionToken(
+      accessTokenPayloadDto.userId,
+      tokenPayloadDto.accessToken,
+    );
+
+    if (!result) {
+      throw new TokenNotSavedException();
+    }
+
+    return tokenPayloadDto;
   }
 
   private async verifyAsync<T>(
