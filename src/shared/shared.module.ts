@@ -1,13 +1,8 @@
-import {
-  /* forwardRef, */ Global,
-  Module,
-  type Provider,
-} from '@nestjs/common';
+import { Global, Module, type Provider } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
-// import { UserModule } from '../modules/user/user.module';
 import { ApiConfigService } from './services/api-config.service';
 import { GeneratorService } from './services/generator.service';
 import { JwtTokenService } from './services/jwt-token.service';
@@ -24,7 +19,6 @@ const providers: Provider[] = [
 @Module({
   providers,
   imports: [
-    // forwardRef(() => UserModule),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       useFactory: (configService: ApiConfigService) => ({
